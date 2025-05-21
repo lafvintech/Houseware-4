@@ -80,25 +80,28 @@
       {%- endif -%}
 
       <aside class="footer__aside">
-        {%- if section.settings.show_country_selector and localization.available_countries.size > 1 -%}
-          {%- assign country_selector = true -%}
+        {%- assign currency_selector = false -%}
+        {%- assign locale_selector = false -%}
+
+        {%- if section.settings.show_currency_selector and shop.enabled_currencies.size > 1 -%}
+          {%- assign currency_selector = true -%}
         {%- endif -%}
 
-        {%- if section.settings.show_locale_selector and localization.available_languages.size > 1 -%}
+        {%- if section.settings.show_locale_selector and shop.published_locales.size > 1 -%}
           {%- assign locale_selector = true -%}
         {%- endif -%}
 
-        <div class="footer__aside-item footer__aside-item--localization {% if country_selector == false and locale_selector == false %}hidden-pocket{% endif %}">
-          {%- if locale_selector or country_selector -%}
+        <div class="footer__aside-item footer__aside-item--localization {% if currency_selector == false and locale_selector == false %}hidden-pocket{% endif %}">
+          {%- if locale_selector or currency_selector -%}
             {%- form 'localization', id: 'localization_form_footer', class: 'footer__localization-form' -%}
               {%- if locale_selector -%}
                 <div class="footer__localization-form-item">
-                  <input type="hidden" name="locale_code" value="{{ localization.language.iso_code }}">
+                  <input type="hidden" name="locale_code" value="{{ form.current_locale.iso_code }}">
                   <span class="visually-hidden">{{ 'footer.general.language' | t }}</span>
 
                   <div class="value-picker-wrapper">
                     <button type="button" class="select-button select-button--mini" aria-haspopup="true" aria-expanded="false" aria-controls="footer-locale-picker" data-action="open-value-picker">
-                      {{- localization.language.endonym_name | capitalize -}}
+                      {{- form.current_locale.endonym_name | capitalize -}}
                       {%- render 'icon', icon: 'arrow-bottom' -%}
                     </button>
 
@@ -112,10 +115,10 @@
                         </header>
 
                         <ul class="value-picker__choice-list" role="list">
-                          {%- for language in localization.available_languages -%}
+                          {%- for locale in form.available_locales -%}
                             <li class="value-picker__choice-list-item">
-                              <button type="submit" name="locale_code" class="value-picker__choice-item" value="{{ language.iso_code }}" {% if language.iso_code == localization.language.iso_code %}aria-current="true"{% endif %}>
-                                {{- language.endonym_name | capitalize -}}
+                              <button type="submit" name="locale_code" class="value-picker__choice-item" value="{{ locale.iso_code }}" {% if locale.iso_code == form.current_locale.iso_code %}aria-current="true"{% endif %}>
+                                {{- locale.endonym_name | capitalize -}}
                               </button>
                             </li>
                           {%- endfor -%}
@@ -126,31 +129,31 @@
                 </div>
               {%- endif -%}
 
-              {%- if country_selector -%}
+              {%- if currency_selector -%}
                 <div class="footer__localization-form-item">
-                  <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
-                  <span class="visually-hidden">{{ 'footer.general.country' | t }}</span>
+                  <input type="hidden" name="currency_code" value="{{ form.current_currency.iso_code }}">
+                  <span class="visually-hidden">{{ 'footer.general.currency' | t }}</span>
 
                   <div class="value-picker-wrapper">
                     <button type="button" class="select-button select-button--mini" aria-haspopup="true" aria-expanded="false" aria-controls="footer-currency-picker" data-action="open-value-picker">
-                      {{- localization.country.name }} ({{ localization.country.currency.iso_code }} {% if localization.country.currency.symbol %}{{ localization.country.currency.symbol }}{%- endif -%})
+                      {{ form.current_currency.iso_code }} {% if form.current_currency.symbol %}{{ form.current_currency.symbol }}{% endif %}
                       {%- render 'icon', icon: 'arrow-bottom' -%}
                     </button>
 
-                    <div id="footer-currency-picker" class="value-picker value-picker--align-left value-picker--auto value-picker--small" data-picker-position="top" aria-hidden="true">
+                    <div id="footer-currency-picker" class="value-picker value-picker--auto value-picker--small" data-picker-position="top" aria-hidden="true">
                       {% render 'icon', icon: 'nav-triangle-borderless' %}
 
-                      <div class="value-picker__inner value-picker__inner--restrict">
+                      <div class="value-picker__inner">
                         <header class="value-picker__header">
-                          <span class="value-picker__title text--strong">{{ 'footer.general.country' | t }}</span>
+                          <span class="value-picker__title text--strong">{{ 'footer.general.currency' | t }}</span>
                           <button type="button" class="value-picker__close" data-action="close-value-picker" aria-controls="footer-currency-picker" aria-label="{{ 'general.accessibility.close' | t }}">{% render 'icon', icon: 'close' %}</button>
                         </header>
 
                         <ul class="value-picker__choice-list" role="list">
-                          {%- for country in localization.available_countries -%}
+                          {%- for currency in form.available_currencies -%}
                             <li class="value-picker__choice-list-item">
-                              <button type="submit" name="country_code" class="value-picker__choice-item" value="{{ country.iso_code }}" {% if country.iso_code == localization.country.iso_code %}aria-current="true"{% endif %}>
-                                {{- country.name }} ({{ country.currency.iso_code }} {% if country.currency.symbol %}{{ country.currency.symbol }}{%- endif -%})
+                              <button type="submit" name="currency_code" class="value-picker__choice-item" value="{{ currency.iso_code }}" {% if currency.iso_code == form.current_currency.iso_code %}aria-current="true"{% endif %}>
+                                {{ currency.iso_code }} {% if currency.symbol %}{{ currency.symbol }}{% endif %}
                               </button>
                             </li>
                           {%- endfor -%}
@@ -163,26 +166,20 @@
             {%- endform -%}
           {%- endif -%}
 
-          {%- capture copyright_info -%}© {{ 'now' | date: '%Y' }} {{ shop.name }}<br>{{ powered_by_link }}{%- endcapture -%}
+          
           <p class="hidden-pocket">{{ copyright_info }}</p>
         </div>
 
         {%- if section.settings.show_social_media -%}
           {%- capture social_media -%}{% render 'social-media', show_social_media_name: false %}{%- endcapture -%}
-        {%- endif -%}
 
-        {%- if social_media != blank or shop.features.follow_on_shop? and section.settings.enable_follow_on_shop -%}
-          <div class="footer__aside-item footer__aside-item--social">
-            <p class="footer__aside-title">{{ 'footer.general.follow_us' | t }}</p>
+          {%- if social_media != blank -%}
+            <div class="footer__aside-item footer__aside-item--social">
+              <p class="footer__aside-title">{{ 'footer.general.follow_us' | t }}</p>
 
-            {{- social_media -}}
-
-            {%- if shop.features.follow_on_shop? and section.settings.enable_follow_on_shop -%}
-              <div class="footer__follow-on-shop">
-                {{- shop | login_button: action: 'follow' -}}
-              </div>
-            {%- endif -%}
-          </div>
+              {{ social_media }}
+            </div>
+          {%- endif -%}
         {%- endif -%}
 
         {%- if section.settings.show_payment_icons and shop.enabled_payment_types.size > 0 -%}
@@ -203,6 +200,27 @@
       </aside>
     </div>
   </div>
+
+  {%- comment -%}
+    In order to reduce the number of static sections, we were asked by Shopify team to move the cookie bar to the footer instead of its own
+    section. This feels a bit hacky but it works :).
+  {%- endcomment -%}
+
+  {%- if section.settings.show_cookie_bar -%}
+    <aside class="cookie-bar" aria-hidden="true">
+      <div class="container">
+        <div class="cookie-bar__inner">
+          <div class="cookie-bar__text rte">
+            {{- section.settings.text -}}
+          </div>
+
+          {%- if section.settings.accept_button != blank -%}
+            <button type="button" class="cookie-bar__button button button--secondary" data-action="accept-terms">{{ section.settings.accept_button | escape }}</button>
+          {%- endif -%}
+        </div>
+      </div>
+    </aside>
+  {%- endif -%}
 </footer>
 
 
@@ -215,13 +233,6 @@
       "id": "show_social_media",
       "label": "Show social media",
       "info": "Make sure to have properly configured your social media in the theme settings.",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_follow_on_shop",
-      "label": "Show Follow on Shop",
-      "info": "To allow customers to follow your store on the Shop app from your storefront, Shop Pay must be enabled. [Learn more](https://help.shopify.com/manual/online-store/themes/customizing-themes/follow-on-shop)",
       "default": true
     },
     {
@@ -243,14 +254,36 @@
     },
     {
       "type": "header",
-      "content": "Country/region selector",
-      "info": "To add a country/region, go to your [currency settings.](/admin/settings/payments)"
+      "content": "Currency selector",
+      "info": "To add a currency, go to your [payment settings.](/admin/settings/payments)"
     },
     {
       "type": "checkbox",
-      "id": "show_country_selector",
-      "label": "Show country/region selector",
+      "id": "show_currency_selector",
+      "label": "Show currency selector",
       "default": true
+    },
+    {
+      "type": "header",
+      "content": "Cookie bar"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_cookie_bar",
+      "label": "Show cookie bar",
+      "default": false
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Use this bar to show information about your cookie policy.</p>"
+    },
+    {
+      "type": "text",
+      "id": "accept_button",
+      "label": "Accept button",
+      "default": "Accept"
     }
   ],
   "blocks": [
